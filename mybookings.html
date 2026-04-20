@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>My Bookings | RailReserve</title>
+  <link rel="stylesheet" href="style.css"/>
+  <style>
+    .bookings-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.2rem;
+      flex-wrap: wrap;
+      gap: 0.8rem;
+    }
+
+    .filter-tabs {
+      display: flex;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+    }
+
+    .filter-tab {
+      padding: 5px 15px;
+      border-radius: 20px;
+      font-size: 0.83rem;
+      font-weight: 700;
+      cursor: pointer;
+      border: 1.5px solid var(--light-gray);
+      background: white;
+      color: #6b7c93;
+      transition: all 0.15s;
+    }
+
+    .filter-tab.active, .filter-tab:hover {
+      background: var(--deep-blue);
+      color: white;
+      border-color: var(--deep-blue);
+    }
+
+    .ticket-card {
+      background: white;
+      border-radius: var(--radius);
+      border: 1.5px solid #e0eaf2;
+      padding: 1.3rem 1.5rem;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 1.2rem;
+      align-items: center;
+      transition: box-shadow 0.2s;
+      margin-bottom: 1rem;
+    }
+
+    .ticket-card:hover { box-shadow: var(--shadow); }
+
+    .ticket-id-badge {
+      background: var(--deep-blue);
+      color: white;
+      font-family: 'Rajdhani', sans-serif;
+      font-weight: 700;
+      font-size: 1rem;
+      padding: 8px 14px;
+      border-radius: 8px;
+      text-align: center;
+      min-width: 80px;
+    }
+
+    .ticket-id-badge small { display: block; font-size: 0.65rem; opacity: 0.7; font-family: 'Nunito', sans-serif; }
+
+    .ticket-info h3 {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--dark);
+      margin-bottom: 4px;
+    }
+
+    .ticket-meta {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      font-size: 0.83rem;
+      color: #6b7c93;
+    }
+
+    .ticket-meta span { display: flex; align-items: center; gap: 4px; }
+
+    .ticket-right {
+      text-align: right;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+    }
+
+    .fare-tag {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--deep-blue);
+    }
+
+    .summary-strip {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .summary-item {
+      background: white;
+      border-radius: 10px;
+      padding: 1.2rem 1rem;
+      text-align: center;
+      border: 1.5px solid #e0eaf2;
+      box-shadow: var(--shadow);
+    }
+
+    .summary-item .val {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--deep-blue);
+    }
+
+    .summary-item .lbl {
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #8a9bac;
+      margin-top: 2px;
+    }
+
+    @media (max-width: 600px) {
+      .ticket-card { grid-template-columns: 1fr; }
+      .ticket-right { align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-logo">
+    <span class="logo-icon">🚂</span>
+    <span>RailReserve</span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="search.html">Search</a></li>
+    <li><a href="mybookings.html">My Bookings</a></li>
+    <li><a href="admin.html">Admin</a></li>
+  </ul>
+</nav>
+
+<div class="page-header">
+  <h1>📋 My Bookings</h1>
+  <p>Track all your train reservations</p>
+</div>
+
+<main>
+  <div id="alert-box"></div>
+
+  <!-- Summary Strip -->
+  <div class="summary-strip" id="summary-strip">
+    <div class="summary-item">
+      <div class="val" id="total-count">—</div>
+      <div class="lbl">Total Tickets</div>
+    </div>
+    <div class="summary-item">
+      <div class="val" id="confirmed-count">—</div>
+      <div class="lbl">Confirmed</div>
+    </div>
+    <div class="summary-item">
+      <div class="val" id="total-spent">—</div>
+      <div class="lbl">Total Spent</div>
+    </div>
+  </div>
+
+  <!-- Bookings Table (desktop) -->
+  <div class="card">
+    <h2>🎫 Booking History</h2>
+
+    <div class="bookings-toolbar">
+      <div class="filter-tabs">
+        <button class="filter-tab active" onclick="filterBookings('all', this)">All</button>
+        <button class="filter-tab" onclick="filterBookings('Confirmed', this)">Confirmed</button>
+        <button class="filter-tab" onclick="filterBookings('Pending', this)">Pending</button>
+        <button class="filter-tab" onclick="filterBookings('Cancelled', this)">Cancelled</button>
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="loadBookings()">🔄 Refresh</button>
+    </div>
+
+    <!-- Card view -->
+    <div id="bookings-cards"></div>
+
+    <!-- Table view (fallback) -->
+    <div class="table-wrapper" id="bookings-table-wrapper" style="display:none;">
+      <table>
+        <thead>
+          <tr>
+            <th>Ticket ID</th>
+            <th>Train Name</th>
+            <th>Passenger</th>
+            <th>Class</th>
+            <th>Journey Date</th>
+            <th>Fare</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="bookings-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div style="text-align:center; margin-top:1rem;">
+    <a href="search.html" class="btn btn-primary">🔍 Book Another Train</a>
+  </div>
+</main>
+
+<footer>
+  <p>© 2024 <span>RailReserve</span> — Railway Reservation System | DBMS Mini Project</p>
+</footer>
+
+<script src="script.js"></script>
+<script>
+  let allBookings = [];
+
+  async function loadBookings() {
+    document.getElementById('bookings-cards').innerHTML =
+      `<div class="loading"><span class="spinner"></span> Loading your bookings…</div>`;
+
+    try {
+      allBookings = await apiFetch('/bookings');
+    } catch {
+      // Try offline bookings
+      const offline = loadLS('offline_bookings') || [];
+      // Merge with sample data
+      allBookings = [...offline, ...getSampleBookings()];
+    }
+
+    renderCards(allBookings);
+    updateSummary(allBookings);
+  }
+
+  function renderCards(bookings) {
+    const container = document.getElementById('bookings-cards');
+
+    if (bookings.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="icon">🎫</div>
+          <p>No bookings found. <a href="search.html" style="color:var(--deep-blue); font-weight:700;">Book your first ticket!</a></p>
+        </div>`;
+      return;
+    }
+
+    container.innerHTML = bookings.map(b => {
+      const statusClass = {
+        'Confirmed': 'badge-confirmed',
+        'Pending':   'badge-pending',
+        'Cancelled': 'badge-cancelled'
+      }[b.status] || 'badge-sky';
+
+      return `
+      <div class="ticket-card">
+        <div class="ticket-id-badge">
+          <small>Ticket</small>
+          #${b.ticket_id}
+        </div>
+        <div class="ticket-info">
+          <h3>🚂 ${b.train_name}</h3>
+          <div class="ticket-meta">
+            <span>👤 ${b.passenger_name || '—'}</span>
+            <span>🪑 ${b.class || '—'}</span>
+            <span>📅 ${fmtDate(b.journey_date)}</span>
+          </div>
+        </div>
+        <div class="ticket-right">
+          <span class="badge ${statusClass}">${b.status}</span>
+          <div class="fare-tag">₹${b.fare}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function filterBookings(status, btn) {
+    document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    if (status === 'all') {
+      renderCards(allBookings);
+    } else {
+      renderCards(allBookings.filter(b => b.status === status));
+    }
+  }
+
+  function updateSummary(bookings) {
+    document.getElementById('total-count').textContent = bookings.length;
+    document.getElementById('confirmed-count').textContent = bookings.filter(b => b.status === 'Confirmed').length;
+    const total = bookings.reduce((sum, b) => sum + (parseFloat(b.fare) || 0), 0);
+    document.getElementById('total-spent').textContent = `₹${total}`;
+  }
+
+  function getSampleBookings() {
+    return [
+      { ticket_id: 1001, train_name: 'Rajdhani Express', passenger_name: 'Arjun Sharma', class: 'AC 2-Tier',  journey_date: '2024-12-15', fare: 800, status: 'Confirmed' },
+      { ticket_id: 1002, train_name: 'Shatabdi Express', passenger_name: 'Priya Mehta',  class: 'Sleeper',    journey_date: '2024-12-20', fare: 300, status: 'Confirmed' },
+      { ticket_id: 1003, train_name: 'Duronto Express',  passenger_name: 'Rahul Gupta',  class: 'AC 3-Tier',  journey_date: '2024-11-30', fare: 500, status: 'Pending'   },
+    ];
+  }
+
+  loadBookings();
+</script>
+</body>
+</html>

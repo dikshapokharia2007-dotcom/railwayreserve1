@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Search Trains | RailReserve</title>
+  <link rel="stylesheet" href="style.css"/>
+  <style>
+    .search-form-card { max-width: 760px; margin: 0 auto 2rem; }
+
+    .fare-legend {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-top: 1rem;
+      padding: 0.9rem 1rem;
+      background: #f0f6fb;
+      border-radius: var(--radius-sm);
+      border: 1px dashed var(--sky-blue);
+    }
+
+    .fare-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #3a5068;
+    }
+
+    .fare-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+    }
+
+    .results-card { animation: fadeUp 0.3s ease; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .train-row td:last-child { white-space: nowrap; }
+
+    .seats-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .seats-fill {
+      height: 6px;
+      border-radius: 3px;
+      background: var(--sky-blue);
+      min-width: 20px;
+    }
+
+    .results-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .results-count {
+      font-size: 0.88rem;
+      color: #6b7c93;
+      font-weight: 600;
+    }
+
+    .route-cell {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 700;
+      color: var(--deep-blue);
+    }
+
+    .route-arrow { color: var(--golden); font-size: 1.1rem; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-logo">
+    <span class="logo-icon">🚂</span>
+    <span>RailReserve</span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="search.html">Search</a></li>
+    <li><a href="mybookings.html">My Bookings</a></li>
+    <li><a href="admin.html">Admin</a></li>
+  </ul>
+</nav>
+
+<div class="page-header">
+  <h1>🔍 Search Trains</h1>
+  <p>Find the best trains for your journey</p>
+</div>
+
+<main>
+  <div id="alert-box"></div>
+
+  <!-- Search Form -->
+  <div class="card search-form-card">
+    <h2>🛤️ Journey Details</h2>
+    <div class="form-grid">
+      <div class="form-group">
+        <label for="from">From Station</label>
+        <input type="text" id="from" placeholder="e.g. New Delhi" list="stations-list"/>
+      </div>
+      <div class="form-group">
+        <label for="to">To Station</label>
+        <input type="text" id="to" placeholder="e.g. Mumbai" list="stations-list"/>
+      </div>
+      <div class="form-group">
+        <label for="journey-date">Journey Date</label>
+        <input type="date" id="journey-date"/>
+      </div>
+    </div>
+
+    <datalist id="stations-list">
+      <option value="New Delhi"/>
+      <option value="Mumbai Central"/>
+      <option value="Chennai Central"/>
+      <option value="Kolkata"/>
+      <option value="Bengaluru"/>
+      <option value="Hyderabad"/>
+      <option value="Ahmedabad"/>
+      <option value="Pune"/>
+      <option value="Jaipur"/>
+      <option value="Lucknow"/>
+    </datalist>
+
+    <div style="margin-top:1.3rem; display:flex; gap:1rem; flex-wrap:wrap;">
+      <button class="btn btn-primary" onclick="searchTrains()">🔍 Search Trains</button>
+      <button class="btn btn-secondary" onclick="loadAllTrains()">📋 View All Trains</button>
+    </div>
+
+    <!-- Fare legend -->
+    <div class="fare-legend">
+      <span style="font-size:0.82rem; font-weight:700; color:#3a5068; margin-right:4px;">Fares:</span>
+      <div class="fare-item"><span class="fare-dot" style="background:#6c757d;"></span> Sleeper — ₹300</div>
+      <div class="fare-item"><span class="fare-dot" style="background:var(--sky-blue);"></span> AC 3-Tier — ₹500</div>
+      <div class="fare-item"><span class="fare-dot" style="background:var(--golden);"></span> AC 2-Tier — ₹800</div>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div id="results-section" style="display:none;" class="card results-card">
+    <h2>🚆 Available Trains</h2>
+    <div class="results-meta">
+      <span class="results-count" id="results-count">Loading…</span>
+      <span class="badge badge-sky" id="route-label"></span>
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Train Name</th>
+            <th>Route</th>
+            <th>Schedule</th>
+            <th>Seats</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="train-table-body">
+          <tr><td colspan="6"><div class="loading"><span class="spinner"></span> Searching…</div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <p>© 2024 <span>RailReserve</span> — Railway Reservation System | DBMS Mini Project</p>
+</footer>
+
+<script src="script.js"></script>
+<script>
+  // Set today as default date
+  document.getElementById('journey-date').value = new Date().toISOString().split('T')[0];
+
+  function renderTrains(trains, routeLabel) {
+    const tbody = document.getElementById('train-table-body');
+    const section = document.getElementById('results-section');
+    section.style.display = '';
+
+    document.getElementById('results-count').textContent =
+      trains.length === 0 ? 'No trains found' : `${trains.length} train(s) found`;
+    document.getElementById('route-label').textContent = routeLabel || '';
+
+    if (trains.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="6">
+        <div class="empty-state">
+          <div class="icon">🚫</div>
+          <p>No trains available for this route. Try different stations.</p>
+        </div>
+      </td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = trains.map((t, i) => {
+      const seatsPercent = Math.min(100, (t.seats / 200) * 100);
+      return `
+      <tr class="train-row">
+        <td><strong>${i + 1}</strong></td>
+        <td>
+          <div style="font-weight:700;">${t.train_name}</div>
+          <div style="font-size:0.78rem; color:#6b7c93;">ID: ${t.train_id}</div>
+        </td>
+        <td>
+          <div class="route-cell">
+            ${t.source} <span class="route-arrow">→</span> ${t.destination}
+          </div>
+        </td>
+        <td><span class="badge badge-sky">${t.schedule}</span></td>
+        <td>
+          <div class="seats-bar">
+            <div class="seats-fill" style="width:${seatsPercent}px; max-width:80px;"></div>
+            <span style="font-size:0.85rem; font-weight:700;">${t.seats}</span>
+          </div>
+        </td>
+        <td>
+          <button class="btn btn-primary btn-sm" onclick="bookTrain(${JSON.stringify(t).replace(/"/g,'&quot;')})">
+            🎫 Book
+          </button>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  async function searchTrains() {
+    const from = document.getElementById('from').value.trim();
+    const to   = document.getElementById('to').value.trim();
+    const date = document.getElementById('journey-date').value;
+
+    if (!from || !to) {
+      showAlert('alert-box', 'Please enter both From and To stations.', 'error');
+      return;
+    }
+
+    document.getElementById('results-section').style.display = '';
+    document.getElementById('train-table-body').innerHTML =
+      `<tr><td colspan="6"><div class="loading"><span class="spinner"></span> Searching trains…</div></td></tr>`;
+
+    // Save date for booking page
+    saveLS('journey_date', date);
+
+    try {
+      const trains = await apiFetch(`/search?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`);
+      renderTrains(trains, `${from} → ${to}`);
+    } catch (err) {
+      showAlert('alert-box', 'Could not connect to server. Showing mock data.', 'info');
+      renderTrains(getMockTrains(from, to), `${from} → ${to}`);
+    }
+  }
+
+  async function loadAllTrains() {
+    document.getElementById('results-section').style.display = '';
+    document.getElementById('train-table-body').innerHTML =
+      `<tr><td colspan="6"><div class="loading"><span class="spinner"></span> Loading trains…</div></td></tr>`;
+    try {
+      const trains = await apiFetch('/trains');
+      renderTrains(trains, 'All Trains');
+    } catch {
+      renderTrains(getMockTrains(), 'All Trains (Demo)');
+    }
+  }
+
+  function bookTrain(train) {
+    const date = document.getElementById('journey-date').value;
+    saveLS('selected_train', { ...train, journey_date: date });
+    window.location.href = 'booking.html';
+  }
+
+  function getMockTrains(from = 'New Delhi', to = 'Mumbai') {
+    return [
+      { train_id: 1, train_name: 'Rajdhani Express', source: from, destination: to, schedule: '16:00 - 08:00', seats: 180 },
+      { train_id: 2, train_name: 'Shatabdi Express', source: from, destination: to, schedule: '06:00 - 14:00', seats: 120 },
+      { train_id: 3, train_name: 'Duronto Express',  source: from, destination: to, schedule: '22:30 - 10:30', seats: 200 },
+    ];
+  }
+
+  // Auto-search if coming back from booking page
+  window.addEventListener('DOMContentLoaded', () => {
+    const prev = loadLS('last_search');
+    if (prev) {
+      document.getElementById('from').value = prev.from || '';
+      document.getElementById('to').value   = prev.to   || '';
+    }
+    loadAllTrains();
+  });
+</script>
+</body>
+</html>
